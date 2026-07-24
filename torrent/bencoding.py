@@ -57,3 +57,31 @@ class BencodeDecoder:
         self.index = end
 
         return value
+
+    def _decode_list(self):
+        # Skip the 'l'
+        self.index += 1
+
+        items = []
+
+        while self.data[self.index:self.index + 1] != b"e":
+            items.append(self.decode())
+
+        # Skip the ending 'e'
+        self.index += 1
+
+        return items
+
+    def decode(self):
+        current = self.data[self.index:self.index + 1]
+
+        if current == b"i":
+            return self._decode_integer()
+
+        elif current == b"l":
+            return self._decode_list()
+
+        elif current.isdigit():
+            return self._decode_string()
+
+        raise ValueError("Unsupported bencode type")

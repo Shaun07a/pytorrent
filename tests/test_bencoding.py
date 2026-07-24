@@ -14,3 +14,16 @@ def test_string():
     result = decoder.decode()
 
     assert result == b"spam"
+
+
+def test_list():
+    decoder = BencodeDecoder(
+        b"l4:spami42ee"
+    )
+
+    result = decoder.decode()
+
+    assert result == [
+        b"spam",
+        42
+    ]

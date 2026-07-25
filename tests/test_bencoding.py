@@ -27,3 +27,15 @@ def test_list():
         b"spam",
         42
     ]
+
+def test_dictionary():
+    decoder = BencodeDecoder(
+        b"d3:cow3:moo4:spam4:eggse"
+    )
+
+    result = decoder.decode()
+
+    assert result == {
+        b"cow": b"moo",
+        b"spam": b"eggs"
+    }

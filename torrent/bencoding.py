@@ -72,6 +72,22 @@ class BencodeDecoder:
 
         return items
 
+    def _decode_dict(self):
+        # Skip the 'd'
+        self.index += 1
+
+        result = {}
+
+        while self.data[self.index:self.index + 1] != b"e":
+            key = self.decode()
+            value = self.decode()
+            result[key] = value
+
+        # Skip the ending 'e'
+        self.index += 1
+
+        return result
+
     def decode(self):
         current = self.data[self.index:self.index + 1]
 
@@ -83,5 +99,8 @@ class BencodeDecoder:
 
         elif current.isdigit():
             return self._decode_string()
+
+        elif current == b"d":
+            return self._decode_dict()
 
         raise ValueError("Unsupported bencode type")

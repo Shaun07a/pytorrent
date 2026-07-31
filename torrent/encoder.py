@@ -35,4 +35,14 @@ class BencodeEncoder:
         encoded += b"e"
 
         return encoded
-    
+
+    def _encode_dict(self, value):
+        encoded = b"d"
+
+        for key in sorted(value.keys()):
+            encoded += self.encode(key)
+            encoded += self.encode(value[key])
+
+        encoded += b"e"
+
+        return encoded

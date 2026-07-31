@@ -1,13 +1,21 @@
-from torrent.parser import TorrentParser
+# from torrent.parser import TorrentParser
 
-parser = TorrentParser(
-    "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
-)
+# parser = TorrentParser(
+#     "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
+# )
 
-torrent = parser.parse()
+# torrent = parser.parse()
 
-print(f"Name          : {torrent.name}")
-print(f"Announce URL  : {torrent.announce}")
-print(f"File Size     : {torrent.length}")
-print(f"Piece Length  : {torrent.piece_length}")
-print(f"Pieces        : {len(torrent.piece_hashes)}")
+# print(f"Name          : {torrent.name}")
+# print(f"Announce URL  : {torrent.announce}")
+# print(f"File Size     : {torrent.length}")
+# print(f"Piece Length  : {torrent.piece_length}")
+# print(f"Pieces        : {len(torrent.piece_hashes)}")
+
+from torrent.encoder import BencodeEncoder
+
+encoder = BencodeEncoder()
+
+print(encoder.encode(42))
+print(encoder.encode("spam"))
+print(encoder.encode(b"hello"))

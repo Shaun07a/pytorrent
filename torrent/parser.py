@@ -1,5 +1,7 @@
 from torrent.bencoding import BencodeDecoder
 from torrent.models import TorrentMeta
+from torrent.encoder import BencodeEncoder
+from torrent.utils import sha1
 
 
 class TorrentParser:
@@ -15,10 +17,19 @@ class TorrentParser:
 
         info = torrent[b"info"]
 
+        encoder = BencodeEncoder()
+
+        encoded_info = encoder.encode(info)
+
+        info_hash = sha1(encoded_info)
+
+        
+
         return TorrentMeta(
             announce=torrent[b"announce"].decode(),
             name=info[b"name"].decode(),
             length=info[b"length"],
             piece_length=info[b"piece length"],
             pieces=info[b"pieces"],
+            info_hash=info_hash,
         )

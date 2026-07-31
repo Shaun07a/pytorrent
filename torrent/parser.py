@@ -1,15 +1,5 @@
-from dataclasses import dataclass
-
 from torrent.bencoding import BencodeDecoder
-
-
-@dataclass
-class TorrentMeta:
-    announce: str
-    name: str
-    length: int
-    piece_length: int
-    pieces: bytes
+from torrent.models import TorrentMeta
 
 
 class TorrentParser:
@@ -21,18 +11,14 @@ class TorrentParser:
             data = file.read()
 
         decoder = BencodeDecoder(data)
-
         torrent = decoder.decode()
 
-        print("Top-level keys:")
-        for key in torrent:
-            print(" ", key)
-
-        print("\nInfo dictionary:")
         info = torrent[b"info"]
 
-        for key, value in info.items():
-            if key == b"pieces":
-                print(f"{key}: <{len(value)} bytes>")
-            else:
-                print(f"{key}: {value}")
+        return TorrentMeta(
+            announce=torrent[b"announce"].decode(),
+            name=info[b"name"].decode(),
+            length=info[b"length"],
+            piece_length=info[b"piece length"],
+            pieces=info[b"pieces"],
+        )

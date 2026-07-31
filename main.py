@@ -46,12 +46,19 @@
 
 # print(encoder.encode(d))
 
-from torrent.parser import TorrentParser
+# from torrent.parser import TorrentParser
 
-parser = TorrentParser(
-    "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
-)
+# parser = TorrentParser(
+#     "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
+# )
 
 
-torrent = parser.parse()
-print("Info Hash :", torrent.info_hash.hex())
+# torrent = parser.parse()
+# print("Info Hash :", torrent.info_hash.hex())
+
+from torrent.peer_id import PeerID
+
+peer_id = PeerID.generate()
+
+print("Peer ID :", peer_id)
+print("Length  :", len(peer_id))

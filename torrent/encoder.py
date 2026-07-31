@@ -26,4 +26,13 @@ class BencodeEncoder:
     def _encode_bytes(self, value):
         return str(len(value)).encode() + b":" + value
 
+    def _encode_list(self, value):
+        encoded = b"l"
+
+        for item in value:
+            encoded += self.encode(item)
+
+        encoded += b"e"
+
+        return encoded
     

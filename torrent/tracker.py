@@ -28,42 +28,35 @@ class TrackerClient:
         return f"{self.torrent.announce}?{params}"
 
     async def announce(self):
-        url = self.build_url()
 
-        print("Tracker URL:")
-        print(url)
+        url = self.build_url()
 
         timeout = aiohttp.ClientTimeout(total=30)
 
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+        for attempt in range(3):
+
             try:
-                print("Connecting to tracker...")
 
-                async with session.get(
-                    url,
-                    ssl=True
-                ) as response:
+                print(f"\nConnecting to tracker (Attempt {attempt + 1}/3)...")
 
-                    print("Connected!")
+                async with aiohttp.ClientSession(timeout=timeout) as session:
 
-                    print("HTTP Status:", response.status)
+                    async with session.get(url) as response:
 
-                    data = await response.read()
+                        print("HTTP Status:", response.status)
 
-                    print("Downloaded response.")
+                        data = await response.read()
 
-                    print("HTTP Status:", response.status)
+                        decoder = BencodeDecoder(data)
 
-                    data = await response.read()
+                        return decoder.decode()
 
             except asyncio.TimeoutError:
-                print("Tracker request timed out.")
-                return None
+
+                print("Tracker timed out.")
 
             except aiohttp.ClientError as e:
-                print(f"Tracker error: {e}")
-                return None
 
-        decoder = BencodeDecoder(data)
+                print(e)
 
-        return decoder.decode()
+        return None

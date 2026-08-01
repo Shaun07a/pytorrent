@@ -15,6 +15,20 @@ async def main():
 
     torrent = parser.parse()
 
+    from torrent.piece_manager import PieceManager
+
+    manager = PieceManager(torrent)
+
+    print()
+
+    print("Total Pieces:", manager.total_pieces)
+
+    print("Next Piece :", manager.next_piece())
+
+    print("Progress   :", manager.progress())
+
+    print()
+
     peer_id = PeerID.generate()
 
     tracker = TrackerClient(torrent, peer_id)

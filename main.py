@@ -46,21 +46,32 @@ async def main():
     for peer in peers[:10]:
         print(peer)
 
-    if peers:
+    if not peers:
+        print("No peers found.")
+        return
+
+    connected = False
+
+    for peer in peers:
+
+        print(f"\nTrying peer {peer.ip}:{peer.port}")
 
         connection = PeerConnection(
-        peers[0],
-        torrent,
-        peer_id
-    )
+            peer,
+            torrent,
+            peer_id
+        )
 
         try:
             await connection.handshake()
-        except Exception as e:
-            print(f"Peer connection failed: {e}")
+            connected = True
+            break
 
-    else:
-        print("No peers found.")
+        except Exception as e:
+            print(f"Failed: {e}")
+
+    if not connected:
+        print("\nCould not establish a usable peer connection.")
 
     print("\nTracker Response:\n")
 

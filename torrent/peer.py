@@ -6,6 +6,7 @@ from torrent.models import Peer, TorrentMeta
 from torrent.messages import Interested, Message, MESSAGE_NAMES
 from torrent.messages import Request
 from torrent.bitfield import Bitfield
+from torrent.piece_manager import PieceManager
 
 
 
@@ -24,6 +25,7 @@ class PeerConnection:
         self.reader = None
         self.writer = None
         self.bitfield = None
+        self.piece_manager = PieceManager(torrent)
 
     async def connect(self):
 
@@ -133,8 +135,14 @@ class PeerConnection:
 
     async def send_request(self):
 
+        piece = self.piece_manager.next_piece()
+
+        if piece is None:
+            print("All pieces downloaded.")
+            return
+
         request = Request(
-            index=0,
+            index=piece,
             begin=0,
             length=16384
         )
@@ -143,7 +151,7 @@ class PeerConnection:
 
         await self.writer.drain()
 
-        print("Requested Piece 0 (first block)")
+        print(f"Requested Piece {piece} (first block)")
 
     async def handle_message(self, message):
 
@@ -174,10 +182,40 @@ class PeerConnection:
                 self.bitfield.has_piece(0)
             )
         elif message_name == "Have":
-            print("Peer announced a new piece.")
+
+            piece_index = struct.unpack(">I", message.payload)[0]
+
+            print(f"Peer has piece {piece_index}")
 
         elif message_name == "Piece":
+
             print("Received piece data!")
+
+            print("Piece Index :", message.index)
+            print("Block Begin :", message.begin)
+            print("Block Size  :", len(message.block))
+
+            self.piece_manager.mark_downloaded(
+                message.index
+            )
+
+            downloaded, total = self.piece_manager.progress()
+
+            print(f"Progress: {downloaded}/{total}")
+
+            await self.send_request()
+
+            self.piece_manager.mark_downloaded(
+                message.index
+            )
+
+            downloaded, total = self.piece_manager.progress()
+
+            print(
+                f"Progress: {downloaded}/{total}"
+            )
+
+            await self.send_request()
 
         elif message_name == "Choke":
             print("Peer choked us.")

@@ -23,6 +23,8 @@ class TrackerClient:
             f"&downloaded=0"
             f"&left={self.torrent.length}"
             f"&compact=1"
+            f"&event=started"
+            f"&numwant=50"
         )
 
         return f"{self.torrent.announce}?{params}"

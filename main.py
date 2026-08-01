@@ -6,6 +6,7 @@ from torrent.peer_id import PeerID
 from torrent.tracker import TrackerClient
 from torrent.peer_parser import PeerParser
 from torrent.peer import PeerConnection
+from torrent.verifier import PieceVerifier
 
 
 async def main():
@@ -14,6 +15,15 @@ async def main():
     )
 
     torrent = parser.parse()
+
+    dummy_piece = b"Hello Torrent"
+
+    result = PieceVerifier.verify(
+        dummy_piece,
+        torrent.pieces[0]
+    )
+
+    print("Verification:", result)
 
     print()
 

@@ -9,7 +9,7 @@ from torrent.bitfield import Bitfield
 from torrent.piece_manager import PieceManager
 from torrent.piece_assembler import PieceAssembler
 from torrent.file_writer import FileWriter
-
+from torrent.verifier import PieceVerifier
 
 
 class PeerConnection:
@@ -199,42 +199,40 @@ class PeerConnection:
             print("Block Begin :", message.begin)
             print("Block Size  :", len(message.block))
 
-            # Store this block
             self.assembler.add_block(
                 message.index,
                 message.begin,
                 message.block
             )
 
-            print(f"Stored block at offset {message.begin}")
-
-            # Assemble the blocks received so far
             piece = self.assembler.assemble_piece(
                 message.index
-                
             )
 
-            self.writer_file.write_piece(
-                message.index,
-                piece
-            )
+            expected_hash = self.torrent.pieces[message.index]
 
-            print(
-                "Current assembled size:",
-                len(piece)
-            )
+            if PieceVerifier.verify(piece, expected_hash):
 
-            # For now, assume the piece is complete
-            self.piece_manager.mark_downloaded(
-                message.index
-            )
+                print("Piece verification passed.")
 
-            downloaded, total = self.piece_manager.progress()
+                self.writer_file.write_piece(
+                    message.index,
+                    piece
+                )
 
-            print(f"Progress: {downloaded}/{total}")
+                self.piece_manager.mark_downloaded(
+                    message.index
+                )
 
-            # Request the next piece
-            await self.send_request()
+                downloaded, total = self.piece_manager.progress()
+
+                print(f"Progress: {downloaded}/{total}")
+
+                await self.send_request()
+
+            else:
+
+                print("Piece verification FAILED.")
 
         elif message_name == "Choke":
             print("Peer choked us.")

@@ -7,11 +7,25 @@ class FileWriter:
 
         self.torrent = torrent
 
-        self.filename = torrent.name
+        download_dir = "downloads"
 
-        # Create an empty file of the correct size
-        with open(self.filename, "wb") as file:
-            file.truncate(torrent.length)
+        os.makedirs(download_dir, exist_ok=True)
+
+        self.filename = os.path.join(
+            download_dir,
+            torrent.name
+        )
+
+        if not os.path.exists(self.filename):
+
+            with open(self.filename, "wb") as file:
+                file.truncate(torrent.length)
+
+            print(f"Created download file:\n{self.filename}")
+
+        else:
+
+            print(f"Using existing download file:\n{self.filename}")
 
     def write_piece(
         self,

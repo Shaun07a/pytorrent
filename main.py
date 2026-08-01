@@ -1,64 +1,25 @@
-# from torrent.parser import TorrentParser
+import asyncio
 
-# parser = TorrentParser(
-#     "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
-# )
-
-# torrent = parser.parse()
-
-# print(f"Name          : {torrent.name}")
-# print(f"Announce URL  : {torrent.announce}")
-# print(f"File Size     : {torrent.length}")
-# print(f"Piece Length  : {torrent.piece_length}")
-# print(f"Pieces        : {len(torrent.piece_hashes)}")
-
-# from torrent.encoder import BencodeEncoder
-
-# encoder = BencodeEncoder()
-
-# print(encoder.encode(42))
-# print(encoder.encode("spam"))
-# print(encoder.encode(b"hello"))
-
-# from torrent.encoder import BencodeEncoder
-
-# encoder = BencodeEncoder()
-
-# print(encoder.encode(["spam", "eggs"]))
-# print(encoder.encode([1, 2, 3]))
-# print(encoder.encode(["hello", 25, b"abc"]))
-
-# from torrent.encoder import BencodeEncoder
-
-# encoder = BencodeEncoder()
-
-# d = {
-#     b"age": 20,
-#     b"name": b"Shaun"
-# }
-
-# print(encoder.encode(d))
-
-# d = {
-#     b"banana": 1,
-#     b"apple": 2
-# }
-
-# print(encoder.encode(d))
-
-# from torrent.parser import TorrentParser
-
-# parser = TorrentParser(
-#     "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
-# )
-
-
-# torrent = parser.parse()
-# print("Info Hash :", torrent.info_hash.hex())
-
+from torrent.parser import TorrentParser
 from torrent.peer_id import PeerID
+from torrent.tracker import TrackerClient
 
-peer_id = PeerID.generate()
 
-print("Peer ID :", peer_id)
-print("Length  :", len(peer_id))
+async def main():
+    parser = TorrentParser(
+        "sample_torrents/ubuntu-26.04-desktop-amd64.iso.torrent"
+    )
+
+    torrent = parser.parse()
+
+    peer_id = PeerID.generate()
+
+    tracker = TrackerClient(torrent, peer_id)
+
+    response = await tracker.announce()
+
+    print(response)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

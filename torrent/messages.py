@@ -51,6 +51,21 @@ class Interested(Message):
             payload=b""
         )
 
+class Request(Message):
+
+    def __init__(self, index: int, begin: int, length: int):
+
+        payload = (
+            struct.pack(">I", index)
+            + struct.pack(">I", begin)
+            + struct.pack(">I", length)
+        )
+
+        super().__init__(
+            message_id=REQUEST,
+            payload=payload
+        )
+
 
 MESSAGE_NAMES = {
     CHOKE: "Choke",

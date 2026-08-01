@@ -47,9 +47,18 @@ class PeerConnection:
 
         response = await self.reader.readexactly(68)
 
-        print("Handshake received")
+        decoded = Handshake.decode(response)
 
-        return response
+        print("\nPeer Handshake")
+        print("----------------------------")
+        print("Protocol :", decoded["protocol"])
+        print("Peer ID  :", decoded["peer_id"])
+        print("Info Hash:", decoded["info_hash"].hex())
+
+        if decoded["info_hash"] != self.torrent.info_hash:
+            raise ValueError("Peer returned the wrong torrent!")
+
+        return decoded
 
     async def handshake(self):
 
@@ -57,6 +66,4 @@ class PeerConnection:
 
         await self.send_handshake()
 
-        response = await self.receive_handshake()
-
-        print(response)
+        await self.receive_handshake()

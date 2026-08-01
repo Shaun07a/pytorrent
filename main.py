@@ -23,8 +23,6 @@ async def main():
 
     print("Total Pieces:", manager.total_pieces)
 
-    print("Next Piece :", manager.next_piece())
-
     print("Progress   :", manager.progress())
 
     print()

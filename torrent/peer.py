@@ -7,6 +7,7 @@ from torrent.messages import Interested, Message, MESSAGE_NAMES
 from torrent.messages import Request
 from torrent.bitfield import Bitfield
 from torrent.piece_manager import PieceManager
+from torrent.piece_assembler import PieceAssembler
 
 
 
@@ -26,6 +27,7 @@ class PeerConnection:
         self.writer = None
         self.bitfield = None
         self.piece_manager = PieceManager(torrent)
+        self.assembler = PieceAssembler()
 
     async def connect(self):
 
@@ -189,12 +191,32 @@ class PeerConnection:
 
         elif message_name == "Piece":
 
-            print("Received piece data!")
+            print("Received piece")
 
             print("Piece Index :", message.index)
             print("Block Begin :", message.begin)
             print("Block Size  :", len(message.block))
 
+            # Store this block
+            self.assembler.add_block(
+                message.index,
+                message.begin,
+                message.block
+            )
+
+            print(f"Stored block at offset {message.begin}")
+
+            # Assemble the blocks received so far
+            piece = self.assembler.assemble_piece(
+                message.index
+            )
+
+            print(
+                "Current assembled size:",
+                len(piece)
+            )
+
+            # For now, assume the piece is complete
             self.piece_manager.mark_downloaded(
                 message.index
             )
@@ -203,18 +225,7 @@ class PeerConnection:
 
             print(f"Progress: {downloaded}/{total}")
 
-            await self.send_request()
-
-            self.piece_manager.mark_downloaded(
-                message.index
-            )
-
-            downloaded, total = self.piece_manager.progress()
-
-            print(
-                f"Progress: {downloaded}/{total}"
-            )
-
+            # Request the next piece
             await self.send_request()
 
         elif message_name == "Choke":

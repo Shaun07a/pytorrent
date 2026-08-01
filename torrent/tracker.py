@@ -1,3 +1,6 @@
+import asyncio
+from socket import timeout
+
 import aiohttp
 
 from urllib.parse import quote_from_bytes
@@ -30,13 +33,37 @@ class TrackerClient:
         print("Tracker URL:")
         print(url)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+        timeout = aiohttp.ClientTimeout(total=30)
 
-                print("HTTP Status:", response.status)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            try:
+                print("Connecting to tracker...")
 
-                data = await response.read()
+                async with session.get(
+                    url,
+                    ssl=True
+                ) as response:
 
-                decoder = BencodeDecoder(data)
+                    print("Connected!")
 
-                return decoder.decode()
+                    print("HTTP Status:", response.status)
+
+                    data = await response.read()
+
+                    print("Downloaded response.")
+
+                    print("HTTP Status:", response.status)
+
+                    data = await response.read()
+
+            except asyncio.TimeoutError:
+                print("Tracker request timed out.")
+                return None
+
+            except aiohttp.ClientError as e:
+                print(f"Tracker error: {e}")
+                return None
+
+        decoder = BencodeDecoder(data)
+
+        return decoder.decode()

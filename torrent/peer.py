@@ -5,6 +5,7 @@ from torrent.handshake import Handshake
 from torrent.models import Peer, TorrentMeta
 from torrent.messages import Interested, Message, MESSAGE_NAMES
 from torrent.messages import Request
+from torrent.bitfield import Bitfield
 
 
 
@@ -22,6 +23,7 @@ class PeerConnection:
 
         self.reader = None
         self.writer = None
+        self.bitfield = None
 
     async def connect(self):
 
@@ -74,8 +76,6 @@ class PeerConnection:
 
         await self.send_interested()
 
-        await self.send_request()
-
         while True:
 
             try:
@@ -95,10 +95,7 @@ class PeerConnection:
             if message is None:
                 continue
 
-            print("\nPeer Message")
-            print("----------------------------")
-            print("Type    :", MESSAGE_NAMES.get(message.message_id, "Unknown"))
-            print("Payload :", len(message.payload), "bytes")
+            await self.handle_message(message)
 
         if self.writer:
             self.writer.close()
@@ -147,3 +144,40 @@ class PeerConnection:
         await self.writer.drain()
 
         print("Requested Piece 0 (first block)")
+
+    async def handle_message(self, message):
+
+        message_name = MESSAGE_NAMES.get(
+            message.message_id,
+            "Unknown"
+        )
+
+        print("\nPeer Message")
+        print("----------------------------")
+        print("Type    :", message_name)
+        print("Payload :", len(message.payload), "bytes")
+
+        if message_name == "Unchoke":
+            print("Peer unchoked us.")
+            await self.send_request()
+
+        elif message_name == "Bitfield":
+
+            self.bitfield = Bitfield(message.payload)
+
+            print(
+                f"Peer has {self.bitfield.count()} pieces."
+            )
+
+            print(
+                "Has Piece #0:",
+                self.bitfield.has_piece(0)
+            )
+        elif message_name == "Have":
+            print("Peer announced a new piece.")
+
+        elif message_name == "Piece":
+            print("Received piece data!")
+
+        elif message_name == "Choke":
+            print("Peer choked us.")

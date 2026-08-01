@@ -1,5 +1,6 @@
 import asyncio
 
+from torrent import tracker
 from torrent.parser import TorrentParser
 from torrent.peer_id import PeerID
 from torrent.tracker import TrackerClient
@@ -19,6 +20,10 @@ async def main():
     tracker = TrackerClient(torrent, peer_id)
 
     response = await tracker.announce()
+
+    if response is None:
+            print("Could not contact tracker.")
+            return
 
     peers = PeerParser.parse(response[b"peers"])
 

@@ -8,6 +8,7 @@ from torrent.messages import Request
 from torrent.bitfield import Bitfield
 from torrent.piece_manager import PieceManager
 from torrent.piece_assembler import PieceAssembler
+from torrent.file_writer import FileWriter
 
 
 
@@ -28,6 +29,7 @@ class PeerConnection:
         self.bitfield = None
         self.piece_manager = PieceManager(torrent)
         self.assembler = PieceAssembler()
+        self.writer_file = FileWriter(torrent)
 
     async def connect(self):
 
@@ -209,6 +211,12 @@ class PeerConnection:
             # Assemble the blocks received so far
             piece = self.assembler.assemble_piece(
                 message.index
+                
+            )
+
+            self.writer_file.write_piece(
+                message.index,
+                piece
             )
 
             print(

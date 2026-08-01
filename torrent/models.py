@@ -20,3 +20,8 @@ class TorrentMeta:
     @property
     def info_hash_hex(self):
         return self.info_hash.hex()
+
+@dataclass
+class Peer:
+    ip: str
+    port: int

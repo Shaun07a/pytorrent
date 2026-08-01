@@ -5,6 +5,7 @@ from torrent.peer_id import PeerID
 from torrent.tracker import TrackerClient
 from torrent.peer_parser import PeerParser
 from torrent.handshake import Handshake
+from torrent.peer import PeerConnection
 
 
 async def main():
@@ -26,6 +27,22 @@ async def main():
 
     for peer in peers[:10]:
         print(peer)
+
+    if peers:
+
+        connection = PeerConnection(
+        peers[0],
+        torrent,
+        peer_id
+    )
+
+    try:
+        await connection.handshake()
+    except Exception as e:
+        print(f"Peer connection failed: {e}")
+
+    else:
+        print("No peers found.")
 
     print("\nTracker Response:\n")
 

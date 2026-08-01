@@ -15,6 +15,14 @@ async def main():
 
     torrent = parser.parse()
 
+    print()
+
+    print("First Piece Hash")
+
+    print(torrent.pieces[0].hex())
+
+    print()
+
     from torrent.piece_manager import PieceManager
 
     manager = PieceManager(torrent)

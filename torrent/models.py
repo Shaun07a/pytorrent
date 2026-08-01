@@ -7,7 +7,7 @@ class TorrentMeta:
     name: str
     length: int
     piece_length: int
-    pieces: bytes
+    pieces: list[bytes]
     info_hash: bytes
 
     @property

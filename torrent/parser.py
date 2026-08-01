@@ -30,6 +30,13 @@ class TorrentParser:
             name=info[b"name"].decode(),
             length=info[b"length"],
             piece_length=info[b"piece length"],
-            pieces=info[b"pieces"],
+            pieces = [
+                info[b"pieces"][i:i + 20]
+                for i in range(
+                    0,
+                    len(info[b"pieces"]),
+                    20
+                )
+            ],
             info_hash=info_hash,
         )

@@ -4,6 +4,7 @@ from torrent.parser import TorrentParser
 from torrent.peer_id import PeerID
 from torrent.tracker import TrackerClient
 from torrent.peer_parser import PeerParser
+from torrent.handshake import Handshake
 
 
 async def main():
@@ -33,11 +34,22 @@ async def main():
 
         if isinstance(value, bytes):
             print(f"Length: {len(value)} bytes")
-
         else:
             print(value)
 
         print()
+
+    # -------- Handshake Test --------
+
+    handshake = Handshake(
+        torrent.info_hash,
+        peer_id
+    )
+
+    packet = handshake.encode()
+
+    print("Handshake Length:", len(packet))
+    print(packet)
 
 
 if __name__ == "__main__":

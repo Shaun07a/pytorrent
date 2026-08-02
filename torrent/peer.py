@@ -6,11 +6,9 @@ from torrent.models import Peer, TorrentMeta
 from torrent.messages import Interested, Message, MESSAGE_NAMES
 from torrent.messages import Request
 from torrent.bitfield import Bitfield
-from torrent.piece_manager import PieceManager
 from torrent.piece_assembler import PieceAssembler
-from torrent.file_writer import FileWriter
 from torrent.verifier import PieceVerifier
-from torrent.block_manager import BlockManager
+
 
 PIPELINE_SIZE = 5
 
@@ -21,7 +19,10 @@ class PeerConnection:
         self,
         peer: Peer,
         torrent: TorrentMeta,
-        peer_id: bytes
+        peer_id: bytes,
+        piece_manager,
+        block_manager,
+        writer_file
     ):
         self.peer = peer
         self.torrent = torrent
@@ -30,12 +31,15 @@ class PeerConnection:
         self.reader = None
         self.writer = None
         self.bitfield = None
-        self.piece_manager = PieceManager(torrent)
         self.assembler = PieceAssembler()
-        self.writer_file = FileWriter(torrent)
-        self.block_manager = BlockManager(torrent)
+        self.piece_manager = piece_manager
+        self.block_manager = block_manager
+        self.writer_file = writer_file
+                
 
-        # Prevents sending duplicate requests
+        # Per-peer objects
+        self.assembler = PieceAssembler()
+
         self.started_download = False
 
     async def connect(self):

@@ -41,6 +41,10 @@ class TrackerClient:
 
                 print(f"\nConnecting to tracker (Attempt {attempt + 1}/3)...")
 
+                print("Tracker URL:")
+                print(url)
+                print()
+
                 async with aiohttp.ClientSession(timeout=timeout) as session:
 
                     async with session.get(url) as response:
@@ -58,7 +62,7 @@ class TrackerClient:
                 print("Tracker timed out.")
 
             except aiohttp.ClientError as e:
-
+                print(f"Client Error: {type(e).__name__}")
                 print(e)
 
         return None

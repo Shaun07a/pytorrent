@@ -7,6 +7,12 @@ from torrent.peer_parser import PeerParser
 from torrent.verifier import PieceVerifier
 from torrent.peer_manager import PeerManager
 
+# ---------------------------------------------------
+# Set to True when testing with your own qBittorrent
+# Set to False when downloading public torrents
+# ---------------------------------------------------
+LOCAL_TESTING = True
+
 
 async def main():
 
@@ -20,8 +26,12 @@ async def main():
 
     torrent = parser.parse()
 
+    print("Announce URL :", torrent.announce)
+    print("Info Hash    :", torrent.info_hash.hex())
+    print()
+
     # ----------------------------
-    # Test Piece Verification
+    # Verify Piece Hash Example
     # ----------------------------
 
     dummy_piece = b"Hello Torrent"
@@ -39,7 +49,7 @@ async def main():
     print()
 
     # ----------------------------
-    # Piece Manager
+    # Piece Information
     # ----------------------------
 
     from torrent.piece_manager import PieceManager
@@ -51,7 +61,7 @@ async def main():
     print()
 
     # ----------------------------
-    # Tracker
+    # Contact Tracker
     # ----------------------------
 
     peer_id = PeerID.generate()
@@ -74,7 +84,10 @@ async def main():
 
     print()
 
-    print("Peer Bytes Length:", len(response[b"peers"]))
+    print(
+        "Peer Bytes Length:",
+        len(response[b"peers"])
+    )
 
     # ----------------------------
     # Parse Peers
@@ -84,18 +97,23 @@ async def main():
         response[b"peers"]
     )
 
-    #
-    # LOCAL TESTING ONLY
-    # Replace your own public IP with localhost
-    #
-    MY_PUBLIC_IP = "14.194.135.206"
+    # ---------------------------------------------------
+    # Local Testing
+    # ---------------------------------------------------
 
-    for peer in peers:
-        if peer.ip == MY_PUBLIC_IP:
-            print(
-                f"Replacing {peer.ip} with localhost"
-            )
-            peer.ip = "127.0.0.1"
+    if LOCAL_TESTING:
+
+        MY_PUBLIC_IP = "139.167.143.182"   # update this if it changes
+
+        print("\nLOCAL TEST MODE ENABLED\n")
+
+        for peer in peers:
+
+            if peer.ip == MY_PUBLIC_IP:
+
+                print(f"Replacing {peer.ip} with localhost")
+
+                peer.ip = "127.0.0.1"
 
     print(f"\nFound {len(peers)} peers")
 
@@ -119,7 +137,7 @@ async def main():
     await manager.start()
 
     # ----------------------------
-    # Tracker Response
+    # Tracker Statistics
     # ----------------------------
 
     print("\nTracker Response:\n")

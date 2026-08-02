@@ -10,6 +10,7 @@ from torrent.piece_manager import PieceManager
 from torrent.piece_assembler import PieceAssembler
 from torrent.file_writer import FileWriter
 from torrent.verifier import PieceVerifier
+from torrent.block_manager import BlockManager
 
 
 class PeerConnection:
@@ -30,6 +31,7 @@ class PeerConnection:
         self.piece_manager = PieceManager(torrent)
         self.assembler = PieceAssembler()
         self.writer_file = FileWriter(torrent)
+        self.block_manager = BlockManager(torrent)
 
     async def connect(self):
 
@@ -139,23 +141,29 @@ class PeerConnection:
 
     async def send_request(self):
 
-        piece = self.piece_manager.next_piece()
+        request = self.block_manager.next_request()
 
-        if piece is None:
-            print("All pieces downloaded.")
+        if request is None:
+            print("Download complete!")
             return
 
-        request = Request(
+        piece, begin, length = request
+
+        packet = Request(
             index=piece,
-            begin=0,
-            length=16384
+            begin=begin,
+            length=length
         )
 
-        self.writer.write(request.encode())
+        self.writer.write(packet.encode())
 
         await self.writer.drain()
 
-        print(f"Requested Piece {piece} (first block)")
+        print(
+            f"Requested Piece {piece} "
+            f"Offset {begin} "
+            f"Length {length}"
+        )
 
     async def handle_message(self, message):
 

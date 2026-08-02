@@ -1,0 +1,2 @@
+Hello, this is my BitTorrent client test file.
+This file is used for testing piece downloads.

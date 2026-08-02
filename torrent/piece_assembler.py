@@ -16,27 +16,32 @@ class PieceAssembler:
 
         self.blocks[piece_index][begin] = block
 
-    def assemble_piece(
-        self,
-        piece_index
-    ):
+    def piece_size(self, piece_index):
 
         if piece_index not in self.blocks:
-            return None
+            return 0
+
+        return sum(
+            len(block)
+            for block in self.blocks[piece_index].values()
+        )
+
+    def assemble_piece(self, piece_index):
+
+        if piece_index not in self.blocks:
+            return b""
 
         piece = b""
 
         for offset in sorted(
             self.blocks[piece_index]
         ):
+
             piece += self.blocks[piece_index][offset]
 
         return piece
 
-    def remove_piece(
-        self,
-        piece_index
-    ):
+    def clear_piece(self, piece_index):
 
         if piece_index in self.blocks:
             del self.blocks[piece_index]

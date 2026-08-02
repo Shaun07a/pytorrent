@@ -35,16 +35,19 @@ class PeerConnection:
         self.writer_file = FileWriter(torrent)
         self.block_manager = BlockManager(torrent)
 
+        # Prevents sending duplicate requests
+        self.started_download = False
+
     async def connect(self):
 
-        print(f"Connecting to {self.peer.ip}:{self.peer.port}")
+        print(f"[{self.peer.ip}:{self.peer.port}] Connecting...")
 
         self.reader, self.writer = await asyncio.open_connection(
             self.peer.ip,
             self.peer.port
         )
 
-        print("Connected!")
+        print(f"[{self.peer.ip}:{self.peer.port}] Connected.")
 
     async def send_handshake(self):
 
@@ -57,7 +60,7 @@ class PeerConnection:
 
         await self.writer.drain()
 
-        print("Handshake sent")
+        print(f"[{self.peer.ip}:{self.peer.port}] Handshake sent")
 
     async def receive_handshake(self):
 
@@ -139,7 +142,7 @@ class PeerConnection:
 
         await self.writer.drain()
 
-        print("Interested message sent")
+        print(f"[{self.peer.ip}:{self.peer.port}] Interested message sent")
 
     async def send_request(self):
 
@@ -162,6 +165,7 @@ class PeerConnection:
         await self.writer.drain()
 
         print(
+            f"[{self.peer.ip}:{self.peer.port}] "
             f"Requested Piece {piece} "
             f"Offset {begin} "
             f"Length {length}"
@@ -174,7 +178,8 @@ class PeerConnection:
             request = self.block_manager.next_request()
 
             if request is None:
-                return
+                print("Pipeline complete.")
+                break
 
             piece, begin, length = request
 
@@ -187,8 +192,7 @@ class PeerConnection:
             self.writer.write(packet.encode())
 
             print(
-                f"Queued Piece {piece} "
-                f"Offset {begin}"
+                f"Queued Piece {piece} Offset {begin}"
             )
 
         await self.writer.drain()
@@ -200,8 +204,8 @@ class PeerConnection:
             "Unknown"
         )
 
-        print("\nPeer Message")
-        print("----------------------------")
+        print(f"\n[{self.peer.ip}:{self.peer.port}] Peer Message")
+        print("--------------------------------------------")
         print("Type    :", message_name)
         print("Payload :", len(message.payload), "bytes")
 
@@ -241,34 +245,73 @@ class PeerConnection:
                 message.block
             )
 
-            piece = self.assembler.assemble_piece(
+            print(f"Stored block at offset {message.begin}")
+
+            current_size = self.assembler.piece_size(
                 message.index
             )
 
-            expected_hash = self.torrent.pieces[message.index]
+            piece_length = min(
+                self.torrent.piece_length,
+                self.torrent.length -
+                message.index * self.torrent.piece_length
+            )
 
-            if PieceVerifier.verify(piece, expected_hash):
+            print(
+                f"Current Piece Size: "
+                f"{current_size}/{piece_length}"
+            )
 
-                print("Piece verification passed.")
+            # Is the whole piece received?
+            if current_size >= piece_length:
 
-                self.writer_file.write_piece(
-                    message.index,
-                    piece
-                )
+                print(f"\nPiece {message.index} complete!")
 
-                self.piece_manager.mark_downloaded(
+                piece = self.assembler.assemble_piece(
                     message.index
                 )
 
-                downloaded, total = self.piece_manager.progress()
+                verified = PieceVerifier.verify(
+                    piece,
+                    self.torrent.pieces[message.index]
+                )
 
-                print(f"Progress: {downloaded}/{total}")
+                print("Verification:", verified)
+
+                if verified:
+
+                    self.writer_file.write_piece(
+                        message.index,
+                        piece
+                    )
+
+                    self.piece_manager.mark_downloaded(
+                        message.index
+                    )
+
+                    downloaded, total = self.piece_manager.progress()
+
+                    print(f"Progress: {downloaded}/{total}")
+
+                    # Entire torrent finished?
+                    if downloaded == total:
+
+                        print("\nDownload Complete!")
+
+                        self.writer.close()
+                        await self.writer.wait_closed()
+
+                        return
+
+            # Request the next block only if download isn't complete
+            await self.send_request()
+
+        elif message_name == "Unchoke":
+
+            if not self.started_download:
+
+                self.started_download = True
+
+                print("Peer unchoked us.")
 
                 await self.fill_pipeline()
-
-            else:
-
-                print("Piece verification FAILED.")
-
-        elif message_name == "Choke":
-            print("Peer choked us.")

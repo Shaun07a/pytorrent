@@ -18,19 +18,24 @@ class TorrentParser:
         info = torrent[b"info"]
 
         encoder = BencodeEncoder()
-
         encoded_info = encoder.encode(info)
-
         info_hash = sha1(encoded_info)
 
-        
+        # Support both single-file and multi-file torrents
+        if b"length" in info:
+            total_length = info[b"length"]
+        else:
+            total_length = sum(
+                file[b"length"]
+                for file in info[b"files"]
+            )
 
         return TorrentMeta(
             announce=torrent[b"announce"].decode(),
             name=info[b"name"].decode(),
-            length=info[b"length"],
+            length=total_length,
             piece_length=info[b"piece length"],
-            pieces = [
+            pieces=[
                 info[b"pieces"][i:i + 20]
                 for i in range(
                     0,

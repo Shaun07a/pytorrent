@@ -12,6 +12,8 @@ from torrent.file_writer import FileWriter
 from torrent.verifier import PieceVerifier
 from torrent.block_manager import BlockManager
 
+PIPELINE_SIZE = 5
+
 
 class PeerConnection:
 
@@ -165,6 +167,32 @@ class PeerConnection:
             f"Length {length}"
         )
 
+    async def fill_pipeline(self):
+
+        for _ in range(PIPELINE_SIZE):
+
+            request = self.block_manager.next_request()
+
+            if request is None:
+                return
+
+            piece, begin, length = request
+
+            packet = Request(
+                index=piece,
+                begin=begin,
+                length=length
+            )
+
+            self.writer.write(packet.encode())
+
+            print(
+                f"Queued Piece {piece} "
+                f"Offset {begin}"
+            )
+
+        await self.writer.drain()
+
     async def handle_message(self, message):
 
         message_name = MESSAGE_NAMES.get(
@@ -179,7 +207,7 @@ class PeerConnection:
 
         if message_name == "Unchoke":
             print("Peer unchoked us.")
-            await self.send_request()
+            await self.fill_pipeline()
 
         elif message_name == "Bitfield":
 
@@ -236,7 +264,7 @@ class PeerConnection:
 
                 print(f"Progress: {downloaded}/{total}")
 
-                await self.send_request()
+                await self.fill_pipeline()
 
             else:
 

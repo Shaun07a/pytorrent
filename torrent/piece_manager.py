@@ -5,11 +5,14 @@ class PieceManager:
         self.torrent = torrent
 
         self.total_pieces = len(
-            torrent.piece_hashes
+            torrent.pieces
         )
 
+        # Pieces that have already been completely
+        # downloaded and verified
         self.downloaded = set()
 
+        # Pieces currently being requested
         self.requested = set()
 
     def next_piece(self):
@@ -17,7 +20,7 @@ class PieceManager:
         for index in range(self.total_pieces):
 
             if index not in self.downloaded and \
-            index not in self.requested:
+               index not in self.requested:
 
                 self.requested.add(index)
 
@@ -30,6 +33,14 @@ class PieceManager:
         self.downloaded.add(index)
 
         self.requested.discard(index)
+
+    def is_downloaded(self, index):
+
+        return index in self.downloaded
+
+    def is_complete(self):
+
+        return len(self.downloaded) == self.total_pieces
 
     def progress(self):
 

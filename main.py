@@ -21,7 +21,7 @@ async def main():
     # ----------------------------
 
     parser = TorrentParser(
-        "sample_torrents/sample.torrent"
+        "sample_torrents/large_sample.torrent"
     )
 
     torrent = parser.parse()

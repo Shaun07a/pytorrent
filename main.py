@@ -138,10 +138,18 @@ async def main():
     # Start Download
     # ----------------------------
 
+    if piece_manager.is_complete():
+
+        print("\nTorrent already completely downloaded.")
+        print("No peer connections required.")
+
+        return
+
     manager = PeerManager(
         peers,
         torrent,
-        peer_id
+        peer_id,
+        piece_manager
     )
 
     await manager.start()

@@ -57,9 +57,19 @@ async def main():
     piece_manager = PieceManager(torrent)
 
     print("Total Pieces:", piece_manager.total_pieces)
-    print("Progress   :", piece_manager.progress())
-    print()
 
+    download_path = "downloads/sample.txt"
+
+    piece_manager.scan_existing_file(
+        download_path
+    )
+
+    print(
+        "Progress   :",
+        piece_manager.progress()
+    )
+
+    print()
     # ----------------------------
     # Contact Tracker
     # ----------------------------

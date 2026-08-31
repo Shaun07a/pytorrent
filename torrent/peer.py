@@ -249,6 +249,11 @@ class PeerConnection:
                 message.block
             )
 
+            self.block_manager.mark_completed(
+                message.index,
+                message.begin
+            )
+
             print(f"Stored block at offset {message.begin}")
 
             current_size = self.assembler.piece_size(

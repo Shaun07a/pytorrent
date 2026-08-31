@@ -153,7 +153,7 @@ class PeerConnection:
         request = self.block_manager.next_request()
 
         if request is None:
-            print("Download complete!")
+            
             return
 
         piece, begin, length = request

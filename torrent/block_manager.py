@@ -6,56 +6,73 @@ class BlockManager:
     def __init__(self, torrent):
 
         self.torrent = torrent
-        self.current_piece = 0
-        self.current_offset = 0
+
+        self.requested = set()
+        self.completed = set()
+
+    def piece_length(self, piece):
+
+        if piece == len(self.torrent.pieces) - 1:
+            return (
+                self.torrent.length
+                - piece * self.torrent.piece_length
+            )
+
+        return self.torrent.piece_length
 
     def next_request(self):
 
-        # Finished downloading everything
-        if self.current_piece >= len(self.torrent.pieces):
-            return None
+        for piece in range(len(self.torrent.pieces)):
 
-        piece_length = self.torrent.piece_length
+            length = self.piece_length(piece)
 
-        # Handle last piece
-        if self.current_piece == len(self.torrent.pieces) - 1:
+            for begin in range(0, length, BLOCK_SIZE):
 
-            remaining = (
-                self.torrent.length -
-                self.current_piece * self.torrent.piece_length
-            )
-
-            piece_length = remaining
-
-        # Finished current piece?
-        if self.current_offset >= piece_length:
-
-            self.current_piece += 1
-            self.current_offset = 0
-
-            if self.current_piece >= len(self.torrent.pieces):
-                return None
-
-            piece_length = self.torrent.piece_length
-
-            if self.current_piece == len(self.torrent.pieces) - 1:
-
-                remaining = (
-                    self.torrent.length -
-                    self.current_piece * self.torrent.piece_length
+                block_length = min(
+                    BLOCK_SIZE,
+                    length - begin
                 )
 
-                piece_length = remaining
+                block = (piece, begin)
 
-        request = (
-            self.current_piece,
-            self.current_offset,
-            min(
-                BLOCK_SIZE,
-                piece_length - self.current_offset
-            )
+                if (
+                    block not in self.requested
+                    and block not in self.completed
+                ):
+
+                    self.requested.add(block)
+
+                    return (
+                        piece,
+                        begin,
+                        block_length
+                    )
+
+        return None
+
+    def mark_completed(self, piece, begin):
+
+        block = (piece, begin)
+
+        self.completed.add(block)
+        self.requested.discard(block)
+
+    def is_piece_complete(self, piece):
+
+        length = self.piece_length(piece)
+
+        for begin in range(0, length, BLOCK_SIZE):
+
+            if (piece, begin) not in self.completed:
+                return False
+
+        return True
+
+    def is_complete(self):
+
+        return len(self.completed) == sum(
+            (
+                self.piece_length(i) + BLOCK_SIZE - 1
+            ) // BLOCK_SIZE
+            for i in range(len(self.torrent.pieces))
         )
-
-        self.current_offset += BLOCK_SIZE
-
-        return request

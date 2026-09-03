@@ -58,7 +58,7 @@ async def main():
 
     print("Total Pieces:", piece_manager.total_pieces)
 
-    download_path = "downloads/sample.txt"
+    download_path = "downloads/large_sample.txt"
 
     piece_manager.scan_existing_file(
         download_path

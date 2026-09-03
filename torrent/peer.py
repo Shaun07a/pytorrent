@@ -35,11 +35,6 @@ class PeerConnection:
         self.piece_manager = piece_manager
         self.block_manager = block_manager
         self.writer_file = writer_file
-                
-
-        # Per-peer objects
-        self.assembler = PieceAssembler()
-
         self.started_download = False
 
     async def connect(self):

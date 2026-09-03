@@ -78,7 +78,8 @@ async def main():
 
     tracker = TrackerClient(
         torrent,
-        peer_id
+        peer_id,
+        piece_manager
     )
 
     response = await tracker.announce()

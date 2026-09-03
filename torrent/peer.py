@@ -209,8 +209,14 @@ class PeerConnection:
         print("Payload :", len(message.payload), "bytes")
 
         if message_name == "Unchoke":
-            print("Peer unchoked us.")
-            await self.fill_pipeline()
+
+            if not self.started_download:
+
+                self.started_download = True
+
+                print("Peer unchoked us.")
+
+                await self.fill_pipeline()
 
         elif message_name == "Bitfield":
 
@@ -310,12 +316,4 @@ class PeerConnection:
             # Request the next block only if download isn't complete
             await self.send_request()
 
-        elif message_name == "Unchoke":
-
-            if not self.started_download:
-
-                self.started_download = True
-
-                print("Peer unchoked us.")
-
-                await self.fill_pipeline()
+        

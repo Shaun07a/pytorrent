@@ -1,7 +1,6 @@
 import asyncio
 
 from torrent.peer import PeerConnection
-from torrent.piece_manager import PieceManager
 from torrent.block_manager import BlockManager
 from torrent.file_writer import FileWriter
 
@@ -21,8 +20,11 @@ class PeerManager:
         self.piece_manager = piece_manager
 
         # Shared across all peers
-        self.piece_manager = PieceManager(torrent)
-        self.block_manager = BlockManager(torrent)
+        self.block_manager = BlockManager(
+            torrent,
+            piece_manager
+        )
+
         self.file_writer = FileWriter(torrent)
 
     async def start(self):

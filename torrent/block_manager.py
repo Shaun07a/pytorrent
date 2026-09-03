@@ -3,9 +3,10 @@ BLOCK_SIZE = 16 * 1024
 
 class BlockManager:
 
-    def __init__(self, torrent):
+    def __init__(self, torrent, piece_manager):
 
         self.torrent = torrent
+        self.piece_manager = piece_manager
 
         self.requested = set()
         self.completed = set()
@@ -24,14 +25,13 @@ class BlockManager:
 
         for piece in range(len(self.torrent.pieces)):
 
+            # Skip already verified pieces
+            if self.piece_manager.is_downloaded(piece):
+                continue
+
             length = self.piece_length(piece)
 
             for begin in range(0, length, BLOCK_SIZE):
-
-                block_length = min(
-                    BLOCK_SIZE,
-                    length - begin
-                )
 
                 block = (piece, begin)
 
@@ -39,6 +39,11 @@ class BlockManager:
                     block not in self.requested
                     and block not in self.completed
                 ):
+
+                    block_length = min(
+                        BLOCK_SIZE,
+                        length - begin
+                    )
 
                     self.requested.add(block)
 
@@ -59,6 +64,9 @@ class BlockManager:
 
     def is_piece_complete(self, piece):
 
+        if self.piece_manager.is_downloaded(piece):
+            return True
+
         length = self.piece_length(piece)
 
         for begin in range(0, length, BLOCK_SIZE):
@@ -70,9 +78,9 @@ class BlockManager:
 
     def is_complete(self):
 
-        return len(self.completed) == sum(
-            (
-                self.piece_length(i) + BLOCK_SIZE - 1
-            ) // BLOCK_SIZE
-            for i in range(len(self.torrent.pieces))
-        )
+        for piece in range(len(self.torrent.pieces)):
+
+            if not self.piece_manager.is_downloaded(piece):
+                return False
+
+        return True

@@ -8,7 +8,6 @@ class PieceManager:
     def __init__(self, torrent):
 
         self.torrent = torrent
-
         self.total_pieces = len(torrent.pieces)
 
         self.downloaded = set()
@@ -21,6 +20,11 @@ class PieceManager:
             return
 
         print("\nChecking existing download...")
+
+        actual_size = os.path.getsize(filename)
+
+        print(f"Existing file size: {actual_size} bytes")
+        print(f"Expected file size: {self.torrent.length} bytes")
 
         with open(filename, "rb") as file:
 
@@ -35,26 +39,42 @@ class PieceManager:
                         - index * self.torrent.piece_length
                     )
 
-                file.seek(index * self.torrent.piece_length)
+                offset = index * self.torrent.piece_length
+
+                file.seek(offset)
 
                 piece_data = file.read(piece_length)
 
-                # Don't consider incomplete pieces
+                # Piece is incomplete
                 if len(piece_data) != piece_length:
+
+                    print(
+                        f"Piece {index} incomplete "
+                        f"({len(piece_data)}/{piece_length} bytes)."
+                    )
+
                     continue
 
+                # Verify piece hash
                 if PieceVerifier.verify(
                     piece_data,
                     self.torrent.pieces[index]
                 ):
+
                     self.downloaded.add(index)
 
                     print(
                         f"Piece {index} already complete and verified."
                     )
 
+                else:
+
+                    print(
+                        f"Piece {index} verification FAILED."
+                    )
+
         print(
-            f"Resume scan: "
+            f"\nResume scan: "
             f"{len(self.downloaded)}/{self.total_pieces} pieces complete."
         )
 

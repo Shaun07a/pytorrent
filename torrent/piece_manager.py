@@ -110,3 +110,26 @@ class PieceManager:
             len(self.downloaded),
             self.total_pieces
         )
+
+    def downloaded_bytes(self):
+
+        total = 0
+
+        for piece in self.downloaded:
+
+            if piece == self.total_pieces - 1:
+                length = (
+                    self.torrent.length
+                    - piece * self.torrent.piece_length
+                )
+            else:
+                length = self.torrent.piece_length
+
+            total += length
+
+        return total
+
+
+    def remaining_bytes(self):
+
+        return self.torrent.length - self.downloaded_bytes()

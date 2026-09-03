@@ -113,7 +113,7 @@ async def main():
 
     if LOCAL_TESTING:
 
-        MY_PUBLIC_IP = "139.167.143.182"   # update this if it changes
+        MY_PUBLIC_IP = "182.72.39.9"   # update this if it changes
 
         print("\nLOCAL TEST MODE ENABLED\n")
 

@@ -82,7 +82,9 @@ async def main():
         piece_manager
     )
 
-    response = await tracker.announce()
+    response = await tracker.announce(
+    event="started"
+    )
 
     if response is None:
         print("Could not contact tracker.")

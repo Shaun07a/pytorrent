@@ -16,7 +16,7 @@ class TrackerClient:
 
         self.port = 6881
 
-    def build_url(self):
+    def build_url(self, event=None):
 
         downloaded = self.piece_manager.downloaded_bytes()
         left = self.piece_manager.remaining_bytes()
@@ -29,15 +29,17 @@ class TrackerClient:
             f"&downloaded={downloaded}"
             f"&left={left}"
             f"&compact=1"
-            f"&event=started"
             f"&numwant=50"
         )
 
+        if event:
+            params += f"&event={event}"
+
         return f"{self.torrent.announce}?{params}"
 
-    async def announce(self):
+    async def announce(self, event=None):
 
-        url = self.build_url()
+        url = self.build_url(event)
 
         timeout = aiohttp.ClientTimeout(total=30)
 

@@ -12,12 +12,14 @@ class PeerManager:
         peers,
         torrent,
         peer_id,
-        piece_manager
+        piece_manager,
+        tracker
     ):
         self.peers = peers
         self.torrent = torrent
         self.peer_id = peer_id
         self.piece_manager = piece_manager
+        self.tracker = tracker
 
         # Shared across all peers
         self.block_manager = BlockManager(

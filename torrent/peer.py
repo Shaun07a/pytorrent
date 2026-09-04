@@ -22,7 +22,8 @@ class PeerConnection:
         peer_id: bytes,
         piece_manager,
         block_manager,
-        writer_file
+        writer_file,
+        tracker
     ):
         self.peer = peer
         self.torrent = torrent
@@ -36,6 +37,7 @@ class PeerConnection:
         self.block_manager = block_manager
         self.writer_file = writer_file
         self.started_download = False
+        self.tracker = tracker
 
     async def connect(self):
 
@@ -307,6 +309,12 @@ class PeerConnection:
                     if downloaded == total:
 
                         print("\nDownload Complete!")
+
+                        print("Sending completed event to tracker...")
+
+                        await self.tracker.announce(
+                            event="completed"
+                        )
 
                         self.writer.close()
                         await self.writer.wait_closed()

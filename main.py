@@ -152,7 +152,8 @@ async def main():
         peers,
         torrent,
         peer_id,
-        piece_manager
+        piece_manager,
+        tracker
     )
 
     await manager.start()

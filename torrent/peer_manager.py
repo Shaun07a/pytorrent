@@ -45,7 +45,8 @@ class PeerManager:
                 self.peer_id,
                 self.piece_manager,
                 self.block_manager,
-                self.file_writer
+                self.file_writer,
+                self.tracker
             )
 
             tasks.append(

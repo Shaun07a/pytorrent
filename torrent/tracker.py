@@ -16,6 +16,8 @@ class TrackerClient:
 
         self.port = 6881
 
+        self.interval = 1800
+
     def build_url(self, event=None):
 
         downloaded = self.piece_manager.downloaded_bytes()
@@ -68,7 +70,18 @@ class TrackerClient:
 
                         decoder = BencodeDecoder(data)
 
-                        return decoder.decode()
+                        response_data = decoder.decode()
+
+                        if response_data and b"interval" in response_data:
+
+                            self.interval = response_data[b"interval"]
+
+                            print(
+                                f"Tracker interval: "
+                                f"{self.interval} seconds"
+                            )
+
+                        return response_data
 
             except asyncio.TimeoutError:
 

@@ -142,11 +142,13 @@ async def main():
     # ----------------------------
 
     if piece_manager.is_complete():
-
         print("\nTorrent already completely downloaded.")
         print("No peer connections required.")
-
         return
+
+    # tracker_task = asyncio.create_task(
+    #     tracker.periodic_announce()
+    # )
 
     manager = PeerManager(
         peers,

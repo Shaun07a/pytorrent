@@ -72,6 +72,17 @@ class TrackerClient:
 
                         response_data = decoder.decode()
 
+                        # if response_data and b"interval" in response_data:
+
+                        #     self.interval = response_data[b"interval"]
+
+                        #     print(
+                        #         f"Tracker interval: "
+                        #         f"{self.interval} seconds"
+                        #     )
+
+                        # return response_data
+
                         if response_data and b"interval" in response_data:
 
                             self.interval = response_data[b"interval"]
@@ -97,3 +108,21 @@ class TrackerClient:
                 print(e)
 
         return None
+
+    async def periodic_announce(self):
+
+        while True:
+
+            await asyncio.sleep(self.interval)
+
+            print("\nPeriodic tracker announce...")
+
+            response = await self.announce()
+
+            if response is None:
+
+                print("Periodic tracker announce failed.")
+
+            else:
+
+                print("Periodic tracker announce successful.")

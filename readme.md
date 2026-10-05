@@ -91,116 +91,58 @@ The client uses Python's `asyncio` for asynchronous peer communication and `aioh
                                |
                                v
                        Downloaded File
-How It Works
+```
 
-The download process follows the basic BitTorrent workflow:
+---
 
-1. Read the .torrent file
-          |
-          v
-2. Decode torrent metadata
-          |
-          v
-3. Calculate the info hash
-          |
-          v
-4. Check for an existing download
-          |
-          v
-5. Verify already downloaded pieces
-          |
-          v
-6. Announce to the tracker
-          |
-          v
-7. Receive peer information
-          |
-          v
-8. Connect to peers
-          |
-          v
-9. Perform the BitTorrent handshake
-          |
-          v
-10. Exchange bitfield / interested / unchoke messages
-          |
-          v
-11. Request 16 KiB blocks
-          |
-          v
-12. Assemble received blocks into pieces
-          |
-          v
-13. Verify each piece using SHA-1
-          |
-          v
-14. Write verified pieces to disk
-          |
-          v
-15. Continue until all pieces are complete
-          |
-          v
-16. Send completed event to tracker
-Project Structure
-Torrent Client/
-│
-├── main.py
-├── requirements.txt
-├── README.md
-│
-├── sample_torrents/
-│   └── large_sample.torrent
-│
-├── downloads/
-│   └── large_sample.txt
-│
-└── torrent/
-    ├── __init__.py
-    ├── bencoding.py
-    ├── parser.py
-    ├── tracker.py
-    ├── peer.py
-    ├── peer_id.py
-    ├── peer_parser.py
-    ├── peer_manager.py
-    ├── block_manager.py
-    ├── piece_manager.py
-    ├── piece_assembler.py
-    ├── verifier.py
-    └── file_writer.py
-Core Components
-Bencode Decoder
+## How It Works
 
-Implements decoding of the Bencode format used by .torrent files.
+The client follows the core BitTorrent download workflow:
 
-Supported data types include:
+```text
+Torrent Metadata
+       ↓
+Tracker Communication
+       ↓
+Peer Discovery
+       ↓
+TCP Connection
+       ↓
+BitTorrent Handshake
+       ↓
+Bitfield / Interested / Unchoke
+       ↓
+Block Requests
+       ↓
+Piece Assembly
+       ↓
+SHA-1 Verification
+       ↓
+File Persistence
+       ↓
+Completed Event
+```
 
-Integers
-Byte strings
-Lists
-Dictionaries
+### 1. Torrent Parsing
 
-This allows the client to read torrent metadata without depending on a BitTorrent-specific library.
+The client reads a `.torrent` file and decodes its Bencode structure to extract:
 
-Torrent Parser
+- Tracker announce URL
+- File name
+- File size
+- Piece length
+- SHA-1 piece hashes
+- Torrent info hash
 
-Extracts important torrent metadata such as:
+The **info hash** identifies the torrent and is used during tracker communication and peer handshakes.
 
-Tracker announce URL
-File name
-File size
-Piece length
-SHA-1 piece hashes
-Torrent info hash
+### 2. Tracker Communication
 
-The info hash is used to identify the torrent during tracker communication and peer handshakes.
+The tracker client communicates with HTTP BitTorrent trackers using the announce protocol.
 
-Tracker Client
+The request includes information such as:
 
-Communicates with HTTP trackers using the BitTorrent announce protocol.
-
-The client sends information including:
-
+```text
 info_hash
 peer_id
 port
@@ -210,22 +152,30 @@ left
 compact
 numwant
 event
+```
 
-The client supports tracker lifecycle events such as:
+The client supports tracker events including:
 
+```text
 started
 completed
+```
 
-It also reads the tracker-provided announce interval for periodic communication.
+It also reads the tracker-provided announce interval.
 
-Peer Discovery
+### 3. Peer Discovery
 
-The tracker returns peers in compact peer format. The client parses the response into peer IP addresses and ports and passes them to the peer manager.
+The tracker returns a list of peers containing their IP addresses and ports.
 
-Peer Connection
+The client parses the compact peer response and creates peer objects that can be used for connection attempts.
 
-The peer connection implements the basic BitTorrent handshake and message flow:
+### 4. Peer Handshake
 
+The client establishes a TCP connection with a peer and performs the BitTorrent handshake.
+
+The basic communication sequence is:
+
+```text
 Handshake
     ↓
 Bitfield
@@ -237,33 +187,41 @@ Unchoke
 Request
     ↓
 Piece
+```
 
-Peer communication is handled asynchronously using asyncio.
+### 5. Block Downloading
 
-Block Manager
+Each torrent piece is divided into smaller blocks.
 
-Pieces are divided into 16 KiB blocks for network transfer.
+The current block size is:
 
-For example, a 256 KiB piece is divided into:
+```text
+16 KiB
+```
 
+For example, a 256 KiB piece consists of:
+
+```text
 256 KiB / 16 KiB = 16 blocks
+```
 
-The block manager keeps track of requested and completed blocks and determines when an entire piece has been received.
+The `BlockManager` tracks requested and completed blocks.
 
-Piece Assembler
+### 6. Piece Assembly
 
 Received blocks are stored using their piece index and byte offset.
 
-Once all blocks for a piece have been received, they are ordered by offset and assembled into the complete piece.
+Once all blocks belonging to a piece have been received, they are ordered by offset and combined into the complete piece.
 
-SHA-1 Verification
+### 7. SHA-1 Verification
 
 Every completed piece is verified against the SHA-1 hash stored in the torrent metadata.
 
+```text
 Downloaded Piece
        |
        v
-    SHA-1
+    SHA-1 Hash
        |
        v
 Compare with Torrent Hash
@@ -274,22 +232,26 @@ Compare with Torrent Hash
    |       |
    v       v
  Write   Re-download
+```
 
-This ensures corrupted data is not accepted as a valid piece.
+This prevents corrupted data from being accepted as a valid piece.
 
-Resume Support
+### 8. Resume Support
 
-The client can resume partially completed downloads.
+The client supports resumable downloads.
 
-When starting, the existing file is scanned and each piece is checked for:
+When the application starts, it checks whether a partially downloaded file already exists.
 
-Correct length
-Valid SHA-1 hash
+Each existing piece is:
 
-Valid pieces are marked as already downloaded, while missing or corrupted pieces are requested again.
+1. Checked for the expected length
+2. Read from disk
+3. SHA-1 verified
+4. Marked as complete if valid
 
-Example:
+For example:
 
+```text
 Checking existing download...
 
 Existing file size: 1048576 bytes
@@ -301,39 +263,52 @@ Piece 2 verification FAILED.
 Piece 3 already complete and verified.
 
 Resume scan: 3/4 pieces complete.
+```
 
 Only the missing or corrupted piece needs to be downloaded again.
 
-Local Testing
+---
 
-The project includes a local testing mode for development.
+## Local Testing
 
-qBittorrent can be used as a local seeder while the Python client acts as the downloader.
+The client can be tested locally using **qBittorrent as a seeder**.
 
+```text
 +---------------------+          +---------------------+
 |   Python Client     |   TCP    |     qBittorrent     |
 |                     | <------> |       Seeder        |
 |   BitTorrent Peer   |          |                     |
 +---------------------+          +---------------------+
+```
 
-For local testing, discovered peer addresses can be redirected to:
+A local testing mode is available that redirects the configured local test peer to:
 
+```text
 127.0.0.1
+```
 
-This makes it possible to test the BitTorrent peer protocol locally without depending entirely on remote peers.
+This makes it possible to test the peer protocol locally without relying entirely on remote peers.
 
-Test Torrent
+---
 
-The included test torrent uses a small file divided into four pieces:
+## Test Torrent
 
-File Size    : 1 MiB
-Pieces       : 4
-Piece Size   : 256 KiB
-Block Size   : 16 KiB
+The included test torrent contains a small file divided into four pieces:
 
-Each piece is therefore transferred through multiple 16 KiB block requests.
+```text
+File Size     : 1 MiB
+Number Pieces : 4
+Piece Size    : 256 KiB
+Block Size    : 16 KiB
+```
 
-Example Output
+Each 256 KiB piece is transferred using multiple 16 KiB block requests.
+
+---
+
+## Example Output
+
+```text
 Announce URL : http://tracker.opentrackr.org:1337/announce
 Info Hash    : 3b211a0300e7b23c85bf2d35eb63a1377b066f71
 
@@ -381,12 +356,17 @@ Download Complete!
 Sending completed event to tracker...
 
 HTTP Status: 200
-Resume and Corruption Detection
+```
 
-The client was tested by modifying an already downloaded piece.
+---
+
+## Resume and Corruption Detection
+
+The resume mechanism was tested by modifying an already downloaded piece.
 
 Instead of downloading the entire file again, the client detects the invalid SHA-1 hash and downloads only the affected piece.
 
+```text
 Resume scan: 3/4 pieces complete.
 
 Piece 2 complete!
@@ -396,108 +376,188 @@ Wrote Piece 2
 Progress: 4/4
 
 Download Complete!
+```
 
-This demonstrates both resumable downloading and piece-level integrity verification.
+This demonstrates both **resumable downloading** and **piece-level integrity verification**.
 
-Technologies Used
-Technology	Purpose
-Python 3.13	Core implementation
-asyncio	Asynchronous networking
-aiohttp	HTTP tracker communication
-TCP	Peer-to-peer communication
-Bencode	Torrent metadata decoding
-SHA-1	Piece integrity verification
-qBittorrent	Local seeding and testing
-Git/GitHub	Version control
-Concepts Demonstrated
+---
 
-This project provides practical experience with:
+## Project Structure
 
-Computer networking
-Peer-to-peer architecture
-TCP communication
-Network protocol implementation
-Distributed systems
-Asynchronous programming
-Concurrency
-Binary data parsing
-File I/O
-Hashing and data integrity
-State management
-Fault detection
-Resumable data transfer
-Installation
-Requirements
-Python 3.13+
-qBittorrent for local testing
-Internet connection for HTTP tracker communication
-Clone the Repository
+```text
+Torrent Client/
+│
+├── main.py
+├── requirements.txt
+├── README.md
+│
+├── sample_torrents/
+│   └── large_sample.torrent
+│
+├── downloads/
+│   └── large_sample.txt
+│
+└── torrent/
+    ├── __init__.py
+    ├── bencoding.py
+    ├── parser.py
+    ├── tracker.py
+    ├── peer.py
+    ├── peer_id.py
+    ├── peer_parser.py
+    ├── peer_manager.py
+    ├── block_manager.py
+    ├── piece_manager.py
+    ├── piece_assembler.py
+    ├── verifier.py
+    └── file_writer.py
+```
+
+---
+
+## Technologies Used
+
+| Technology | Purpose |
+|------------|---------|
+| Python 3.13 | Core implementation |
+| asyncio | Asynchronous networking |
+| aiohttp | HTTP tracker communication |
+| TCP | Peer-to-peer communication |
+| Bencode | Torrent metadata decoding |
+| SHA-1 | Piece integrity verification |
+| qBittorrent | Local seeding and testing |
+| Git/GitHub | Version control |
+
+---
+
+## Concepts Demonstrated
+
+This project demonstrates practical implementation of:
+
+- Computer Networking
+- Peer-to-Peer Architecture
+- TCP Communication
+- Network Protocols
+- Distributed Systems
+- Asynchronous Programming
+- Concurrency
+- Binary Data Parsing
+- File I/O
+- Hashing and Data Integrity
+- State Management
+- Fault Detection
+- Resumable Data Transfer
+
+---
+
+## Installation
+
+### Requirements
+
+- Python 3.13+
+- qBittorrent for local testing
+- Internet connection for HTTP tracker communication
+
+### Clone the Repository
+
+```bash
 git clone <your-repository-url>
 cd "Torrent Client"
-Create a Virtual Environment
+```
+
+### Create a Virtual Environment
 
 Windows PowerShell:
 
+```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-Install Dependencies
+```
+
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
-Run the Client
+```
+
+### Run the Client
+
+```bash
 python main.py
+```
 
 Downloaded files are stored in:
 
+```text
 downloads/
-Configuration
+```
 
-Local testing can be enabled in main.py:
+---
 
+## Configuration
+
+Local testing can be enabled in `main.py`:
+
+```python
 LOCAL_TESTING = True
+```
 
 Set it to:
 
+```python
 LOCAL_TESTING = False
+```
 
 when local peer address replacement is not required.
 
-Current Limitations
+---
+
+## Current Limitations
 
 This project focuses on the core BitTorrent download workflow and is not intended to be a complete production BitTorrent client.
 
 Currently, it does not implement:
 
-DHT
-Magnet links
-UDP trackers
-Peer Exchange (PEX)
-Protocol encryption
-Upload/seeding functionality
-Rarest-piece-first selection
-Advanced peer scoring
-Production-grade peer reconnection
-Complete request timeout/retry handling
-Full choking/unchoking strategy
-Future Improvements
- Robust multi-peer piece scheduling
- Piece availability tracking using HAVE messages
- Rarest-piece-first selection
- Request timeout and retry handling
- Automatic peer reconnection
- Improved choking/unchoking strategy
- Download speed and ETA tracking
- Upload/seeding support
- UDP tracker support
- DHT implementation
- Magnet link support
- Peer Exchange (PEX)
- Command-line interface
- Improved logging and statistics
-Learning Objective
+- DHT
+- Magnet links
+- UDP trackers
+- Peer Exchange (PEX)
+- Protocol encryption
+- Upload/seeding functionality
+- Rarest-piece-first selection
+- Advanced peer scoring
+- Production-grade peer reconnection
+- Complete request timeout/retry handling
+- Full choking/unchoking strategy
 
-The main goal of this project is to understand how a peer-to-peer protocol works internally by implementing the major components rather than relying on an existing BitTorrent client library.
+---
+
+## Future Improvements
+
+- [ ] Robust multi-peer piece scheduling
+- [ ] Piece availability tracking using `HAVE` messages
+- [ ] Rarest-piece-first selection
+- [ ] Request timeout and retry handling
+- [ ] Automatic peer reconnection
+- [ ] Improved choking/unchoking strategy
+- [ ] Download speed and ETA tracking
+- [ ] Upload/seeding support
+- [ ] UDP tracker support
+- [ ] DHT implementation
+- [ ] Magnet link support
+- [ ] Peer Exchange (PEX)
+- [ ] Command-line interface
+- [ ] Improved logging and statistics
+
+---
+
+## Learning Objective
+
+The main goal of this project is to understand how a peer-to-peer file transfer protocol works internally by implementing its core components instead of relying on an existing BitTorrent client library.
 
 The project brings together:
 
+```text
 Torrent Metadata
        ↓
 Tracker Communication
@@ -515,15 +575,20 @@ Piece Assembly
 SHA-1 Verification
        ↓
 File Persistence
+```
 
 into a working peer-to-peer download system.
 
-Disclaimer
+---
+
+## Disclaimer
 
 This project is intended for educational and networking research purposes.
 
 Only download or distribute files that you have the legal right to access or share.
 
-Author
+---
 
-Shaun Joseph
+## Author
+
+**Shaun Joseph**
